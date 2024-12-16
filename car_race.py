@@ -1,7 +1,7 @@
 import pygame
 import random
 import sys
-import subprocess  # Import subprocess to navigate to the main menu
+import subprocess 
 
 # Initialize Pygame
 pygame.init()
@@ -34,8 +34,8 @@ highest_score = 0  # Tracks the highest score
 
 # Load images
 try:
-    PLAYER_CAR_IMAGE = pygame.image.load("assets/blue_car-removebg-preview.png")
-    ENEMY_CAR_IMAGE = pygame.image.load("assets/red_car_-removebg-preview.png")
+    PLAYER_CAR_IMAGE = pygame.image.load("assets/image/blue_car-removebg-preview.png")
+    ENEMY_CAR_IMAGE = pygame.image.load("assets/image/red_car_-removebg-preview.png")
 
     # Scale images to match car dimensions
     PLAYER_CAR_IMAGE = pygame.transform.scale(PLAYER_CAR_IMAGE, (CAR_WIDTH, CAR_HEIGHT))
@@ -43,8 +43,16 @@ try:
 except pygame.error:
     print("Error: Unable to load car images. Please ensure the image files exist.")
     pygame.quit()
-    exit()
+    sys.exit()
 
+
+
+
+
+CAR_RUNNING_SOUND = pygame.mixer.Sound("assets/sound/8-bit-melody-loop-37872.mp3")
+CAR_EXPLODE_SOUND = pygame.mixer.Sound("assets/sound/8-bit-explosion-95847.mp3")
+BUTTON_SOUND = pygame.mixer.Sound("assets/sound/bruitage-bouton-v1-274125.mp3")
+PAUSE_SOUND = pygame.mixer.Sound("assets/sound/interface-button-154180.mp3")
 
 # Button Class
 class Button:
@@ -77,7 +85,10 @@ class Button:
         return False
 
 
-# Player Car Class
+
+
+
+
 class PlayerCar(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -88,7 +99,9 @@ class PlayerCar(pygame.sprite.Sprite):
         self.speed = 5
 
     def update(self):
+        # Car movement logic
         keys = pygame.key.get_pressed()
+
         if keys[pygame.K_LEFT] and self.rect.left > ROAD_X:
             self.rect.x -= self.speed
         if keys[pygame.K_RIGHT] and self.rect.right < (ROAD_X + ROAD_WIDTH):
@@ -97,6 +110,8 @@ class PlayerCar(pygame.sprite.Sprite):
             self.rect.y -= self.speed
         if keys[pygame.K_DOWN] and self.rect.bottom < SCREEN_HEIGHT:
             self.rect.y += self.speed
+
+
 
 
 # Enemy Car Class
@@ -138,7 +153,6 @@ class EnemyCar(pygame.sprite.Sprite):
     def reset_position(self):
         self.rect.y = random.randint(-300, -100)
 
-
 # Drawing the road and grass
 def draw_road_and_grass(lane_y_offset):
     SCREEN.fill(GREEN)
@@ -171,6 +185,12 @@ def pause_game():
         "Quit", small_font, WHITE, RED, (200, 0, 0)
     )
 
+    # Play pause sound when the game is paused
+    PAUSE_SOUND.play()
+
+    # Stop car running sound when the game is paused
+    CAR_RUNNING_SOUND.stop()
+
     while True:
         SCREEN.fill(GRAY)
         pause_text = font.render("Paused", True, WHITE)
@@ -183,16 +203,22 @@ def pause_game():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                exit()
+                sys.exit()
             if resume_button.handle_event(event):
+                BUTTON_SOUND.play()  # Button sound for resume
+
+                # Restart car running sound when the game is resumed
+                CAR_RUNNING_SOUND.play(loops=-1, maxtime=0)  # Play the running sound in a loop
                 return
             if menu_button.handle_event(event):
+                BUTTON_SOUND.play()  # Button sound for menu
                 subprocess.run([sys.executable, "car_race_menu.py"])
                 pygame.quit()
                 sys.exit()
             if quit_button.handle_event(event):
+                BUTTON_SOUND.play()  # Button sound for quit
                 pygame.quit()
-                exit()
+                sys.exit()
 
         pygame.display.flip()
 
@@ -219,32 +245,36 @@ def game_over_screen(screen, score):
         "Quit", button_font, WHITE, RED, (200, 0, 0)
     )
 
-    running = True
-    while running:
-        screen.fill(GREEN)
-        pygame.draw.rect(screen, GRAY, (ROAD_X, 0, ROAD_WIDTH, SCREEN_HEIGHT))
-        s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        s.set_alpha(128)
-        s.fill((0, 0, 0))
-        screen.blit(s, (0, 0))
+    # Play game over sound
+    CAR_EXPLODE_SOUND.play()
 
-        game_over_text = title_font.render("Game Over", True, WHITE)
+    # Stop car running sound when game over occurs
+    CAR_RUNNING_SOUND.stop()
+
+    while True:
+        SCREEN.fill(GRAY)
+        game_over_text = title_font.render("Game Over", True, RED)
         score_text = button_font.render(f"Score: {score}", True, WHITE)
-        high_score_text = button_font.render(f"Highest Score: {highest_score}", True, WHITE)
-        screen.blit(game_over_text, game_over_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 100)))
-        screen.blit(score_text, score_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30)))
-        screen.blit(high_score_text, high_score_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 10)))
+        high_score_text = button_font.render(f"High Score: {highest_score}", True, WHITE)
+        
+        SCREEN.blit(game_over_text, game_over_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 150)))
+        SCREEN.blit(score_text, score_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50)))
+        SCREEN.blit(high_score_text, high_score_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)))
 
-        continue_button.draw(screen)
-        quit_button.draw(screen)
+        continue_button.draw(SCREEN)
+        quit_button.draw(SCREEN)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return False
+                pygame.quit()
+                sys.exit()
             if continue_button.handle_event(event):
-                return True
+                BUTTON_SOUND.play()  # Button sound for continue
+                return
             if quit_button.handle_event(event):
-                return False
+                BUTTON_SOUND.play()  # Button sound for quit
+                pygame.quit()
+                sys.exit()
 
         pygame.display.flip()
     return False
@@ -277,12 +307,18 @@ def main():
             "||", font, WHITE, GRAY, (150, 150, 150)
         )
 
+        # Start the running sound when the game starts
+        CAR_RUNNING_SOUND.play(loops=-1, maxtime=0)
+
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    CAR_RUNNING_SOUND.stop()  # Stop the sound on quitting
                     return
                 if pause_button.handle_event(event):
-                    pause_game()
+                    PAUSE_SOUND.play()  # Play pause sound when paused
+                    CAR_RUNNING_SOUND.stop()  # Stop running sound when paused
+                    pause_game()  # Implement pause logic here
 
             # Increase difficulty
             difficulty_timer += 1
@@ -302,6 +338,7 @@ def main():
             # Detect collisions
             if pygame.sprite.spritecollideany(player, enemy_cars):
                 if not game_over_screen(SCREEN, score):
+                    CAR_RUNNING_SOUND.stop()  # Stop running sound on game over
                     return
                 break
 
