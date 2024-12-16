@@ -2,6 +2,8 @@ import pygame
 import sys
 import subprocess  # For running external scripts
 
+
+
 # Initialize Pygame
 pygame.init()
 

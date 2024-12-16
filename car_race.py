@@ -270,14 +270,14 @@ def game_over_screen(screen, score):
                 sys.exit()
             if continue_button.handle_event(event):
                 BUTTON_SOUND.play()  # Button sound for continue
-                return
+                return True  # This triggers the restart of the game
             if quit_button.handle_event(event):
                 BUTTON_SOUND.play()  # Button sound for quit
                 pygame.quit()
                 sys.exit()
 
         pygame.display.flip()
-    return False
+
 
 
 # Main Game Loop
@@ -340,7 +340,7 @@ def main():
                 if not game_over_screen(SCREEN, score):
                     CAR_RUNNING_SOUND.stop()  # Stop running sound on game over
                     return
-                break
+                break  # Break to restart the game
 
             # Draw everything
             lane_y_offset = (lane_y_offset + lane_speed) % 100
@@ -356,6 +356,7 @@ def main():
 
             pygame.display.flip()
             clock.tick(60)
+
 
 
 if __name__ == "__main__":
